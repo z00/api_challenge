@@ -1,24 +1,28 @@
 package com.disney.studios;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.Ordered;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import com.disney.studios.domain.Dog;
+import com.disney.studios.service.DogsDAO;
 
 /**
- * Loads stored objects from the file system and builds up
- * the appropriate objects to add to the data source.
+ * Loads stored objects from the file system and builds up the appropriate
+ * objects to add to the data source.
  *
  * Created by fredjean on 9/21/15.
  */
 @Component
-public class PetLoader implements InitializingBean {
+public class PetLoader implements InitializingBean, Ordered {
     // Resources to the different files we need to load.
     @Value("classpath:data/labrador.txt")
     private Resource labradors;
@@ -33,13 +37,14 @@ public class PetLoader implements InitializingBean {
     private Resource yorkies;
 
     @Autowired
-    DataSource dataSource;
+    private DogsDAO  dao;
 
     /**
-     * Load the different breeds into the data source after
-     * the application is ready.
+     * Load the different breeds into the data source after the application is
+     * ready.
      *
-     * @throws Exception In case something goes wrong while we load the breeds.
+     * @throws Exception
+     *             In case something goes wrong while we load the breeds.
      */
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -50,21 +55,30 @@ public class PetLoader implements InitializingBean {
     }
 
     /**
-     * Reads the list of dogs in a category and (eventually) add
-     * them to the data source.
-     * @param breed The breed that we are loading.
-     * @param source The file holding the breeds.
-     * @throws IOException In case things go horribly, horribly wrong.
+     * Reads the list of dogs in a category and (eventually) add them to the
+     * data source.
+     *
+     * @param breed
+     *            The breed that we are loading.
+     * @param source
+     *            The file holding the breeds.
+     * @throws Exception
+     *             In case things go horribly, horribly wrong.
      */
-    private void loadBreed(String breed, Resource source) throws IOException {
-        try ( BufferedReader br = new BufferedReader(new InputStreamReader(source.getInputStream()))) {
+    private void loadBreed(String breed, Resource source) throws Exception {
+        List<Dog> dogs = new ArrayList<>(64);
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(source.getInputStream()))) {
             String line;
             while ((line = br.readLine()) != null) {
-                System.out.println(line);
-                /* TODO: Create appropriate objects and save them to
-                 *       the datasource.
-                 */
+                dogs.add(new Dog(0, null, breed, line));
             }
         }
+        dao.bulkInsertDogs(dogs);
+
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.LOWEST_PRECEDENCE;
     }
 }
