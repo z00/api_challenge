@@ -18,7 +18,7 @@ $ java -jar target/api_interview-0.1.0.jar
 ```
 
 
-NO ORM (Hibernate was used). Reasons can be discussed. 
+NO ORM (Hibernate). Reasons can be discussed. 
 
 TODOs:
 
